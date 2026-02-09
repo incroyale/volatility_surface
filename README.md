@@ -50,8 +50,8 @@ This project implements volatility surface construction for S&P 500 index option
 
 
 ## References
-Gatheral, J. (2006). *The Volatility Surface: A Practitioner's Guide*. Wiley Finance.
-Gatheral, J., & Jacquier, A. (2013). Arbitrage-free SVI volatility surfaces. *Quantitative Finance*, 14(1), 59-71.
+- Gatheral, J. (2006). *The Volatility Surface: A Practitioner's Guide*. Wiley Finance.
+- Gatheral, J., & Jacquier, A. (2013). Arbitrage-free SVI volatility surfaces. *Quantitative Finance*, 14(1), 59-71.
 
 
 
