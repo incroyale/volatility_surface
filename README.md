@@ -21,7 +21,7 @@ This project implements volatility surface construction for S&P 500 index option
 - Purely data-driven approach susceptible to market data noise
 - No guarantee of smooth or financially meaningful surface
 
-![IV Surface](https://github.com/incroyale/volatility_surface/blob/main/iv_surface.png "IV Surface Demo")
+![Phase 1](https://github.com/incroyale/volatility_surface/blob/main/iv_surface.png "Phase 1")
 
 ### Phase 2: SVI Model with Surface Interpolation
 
@@ -35,10 +35,7 @@ This project implements volatility surface construction for S&P 500 index option
 - Applied Hermite interpolation to construct the full surface across maturities
 - Incorporated arbitrage-free constraints following Gatheral & Jacquier (2013)
 
-**Key Features:**
-- Captures equity index volatility skew (higher IV for OTM puts vs. OTM calls)
-- Smooth smile fitting with parametric structure
-- Enforces no-arbitrage conditions per Gatheral & Jacquier (2013) methodology
+![Phase 2 Smiles](https://github.com/incroyale/volatility_surface/blob/main/Figure_1.png "Phase 2 Smiles")
 
 ### Phase 3: Heston Stochastic Volatility Model *(In Progress)*
 
