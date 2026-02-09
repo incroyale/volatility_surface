@@ -21,7 +21,10 @@ This project implements volatility surface construction for S&P 500 index option
 - Purely data-driven approach susceptible to market data noise
 - No guarantee of smooth or financially meaningful surface
 
-![Phase 1](https://github.com/incroyale/volatility_surface/blob/main/images/phase_1_surface.png "Phase 1")
+<p align="center">
+  <img src="https://github.com/incroyale/volatility_surface/blob/main/images/phase_1_surface.png" width="80%" alt="Phase 1" title="Phase 1">
+</p>
+
 
 ### Phase 2: SVI Model with Surface Interpolation
 
