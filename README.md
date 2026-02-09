@@ -35,9 +35,12 @@ This project implements volatility surface construction for S&P 500 index option
 - Applied Hermite interpolation to construct the full surface across maturities
 - Incorporated arbitrage-free constraints following Gatheral & Jacquier (2013)
 
-![Phase 2 Smiles](https://github.com/incroyale/volatility_surface/blob/main/images/svi_smiles.png "Phase 2 Smiles")
-![Phase 2 Surface](https://github.com/incroyale/volatility_surface/blob/main/images/svi_surface_1.png "Phase 2 Surface")
-![Phase 2 Surface](https://github.com/incroyale/volatility_surface/blob/main/images/svi_surface_2.png "Phase 2 Surface")
+<p align="center">
+  <img src="https://github.com/incroyale/volatility_surface/blob/main/images/svi_smiles.png" height="200px" style="margin-right:5px;" alt="Phase 2 Smiles">
+  <img src="https://github.com/incroyale/volatility_surface/blob/main/images/svi_surface_1.png" height="200px" style="margin-right:5px;" alt="Phase 2 Surface 1">
+  <img src="https://github.com/incroyale/volatility_surface/blob/main/images/svi_surface_2.png" height="200px" alt="Phase 2 Surface 2">
+</p>
+
 
 ### Phase 3: Heston Stochastic Volatility Model *(In Progress)*
 
