@@ -49,12 +49,15 @@ This project implements volatility surface construction for S&P 500 index option
 
 **Objective:** Implement a full stochastic volatility framework for consistent pricing and risk management.
 
-**Planned Methodology:**
+**Methodology:**
 - Calibrate Heston model parameters to the observed volatility surface
-- Leverage characteristic function-based pricing for European options
+- Characteristic function-based pricing for SPX options
+- Use numerical Integration and FFT (Carr-Madan) approach to compare the efficiency
 - Validate model fit against SVI surface from Phase 2
 
-**Status:** Under development
+<p align="center">
+  <img src="https://github.com/incroyale/volatility_surface/blob/main/images/heston_surface.png" width="80%" alt="Heston Nnumerical Integration (only 2 expiries)" title="Heston without FFT">
+</p>
 
 
 ## References
@@ -64,6 +67,8 @@ This project implements volatility surface construction for S&P 500 index option
 - Heston PDE: https://dspacemainprd01.lib.uwaterloo.ca/server/api/core/bitstreams/edb62a2b-02ea-4c4d-a504-7b3bd5c0e39e/content
 - Heston Characteristic Eq: https://www.maths.univ-evry.fr/pages_perso/crepey/Finance/051111_mikh%20heston.pdf
 - Heston Implementation: https://hal.sorbonne-universite.fr/hal-02273889/document
+- Carr, P., & Madan, D. (1999). Option valuation using the fast Fourier transform. Journal of Computational Finance, 2(4), 61–73.
+- Heston, S. L. (1993). A closed-form solution for options with stochastic volatility with applications to bond and currency options. The Review of Financial Studies, 6(2), 327–343.
 
 
 
