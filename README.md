@@ -60,6 +60,10 @@ This project implements volatility surface construction for S&P 500 index option
 ## References
 - Gatheral, J. (2006). *The Volatility Surface: A Practitioner's Guide*. Wiley Finance.
 - Gatheral, J., & Jacquier, A. (2013). Arbitrage-free SVI volatility surfaces. *Quantitative Finance*, 14(1), 59-71.
+- Heston Girsanov's Formula: https://quant.stackexchange.com/questions/61927/heston-stochastic-volatility-girsanov-theorem/61931#61931
+- Heston PDE: https://dspacemainprd01.lib.uwaterloo.ca/server/api/core/bitstreams/edb62a2b-02ea-4c4d-a504-7b3bd5c0e39e/content
+- Heston Characteristic Eq: https://www.maths.univ-evry.fr/pages_perso/crepey/Finance/051111_mikh%20heston.pdf
+- Heston Implementation: https://hal.sorbonne-universite.fr/hal-02273889/document
 
 
 
