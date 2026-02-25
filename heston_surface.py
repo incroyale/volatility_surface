@@ -159,7 +159,7 @@ if __name__ == "__main__":
     heston.fetch_option_chain()
     heston.spot_price = heston.fetch_spot_price()
     print(f"Spot: {heston.spot_price:.2f}")
-    heston.fetch_iv_df(min_days=15/365, max_days=40/365, strike_width=0.12)
+    heston.fetch_iv_df(min_days=3/365, max_days=10/365, strike_width=0.12)
     fitted_smiles = heston.calibrate_all_smiles()
     K_grid, T_grid, IV_grid = heston.build_surface_grid(fitted_smiles)
     heston.plot_surface(K_grid, T_grid, IV_grid)
