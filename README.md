@@ -45,15 +45,14 @@ This project implements volatility surface construction for S&P 500 index option
 </p>
 
 
-### Phase 3: Heston Stochastic Volatility Model *(In Progress)*
+### Phase 3: Heston Stochastic Volatility Model 
 
 **Objective:** Implement a full stochastic volatility framework for consistent pricing and risk management.
 
 **Methodology:**
 - Calibrate Heston model parameters to the observed volatility surface
 - Characteristic function-based pricing for SPX options
-- Use numerical Integration and FFT (Carr-Madan) approach to compare the efficiency
-- Validate model fit against SVI surface from Phase 2
+- Use numerical Integration and FFT (Carr-Madan) approach
 
 <p align="center">
   <img src="https://github.com/incroyale/volatility_surface/blob/main/images/heston_surface.png" width="80%" alt="Heston Nnumerical Integration (only 2 expiries)" title="Heston without FFT">
