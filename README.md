@@ -69,6 +69,7 @@ This project implements volatility surface construction for S&P 500 index option
 - Heston Implementation: https://hal.sorbonne-universite.fr/hal-02273889/document
 - Carr, P., & Madan, D. (1999). Option valuation using the fast Fourier transform. Journal of Computational Finance, 2(4), 61–73.
 - Heston, S. L. (1993). A closed-form solution for options with stochastic volatility with applications to bond and currency options. The Review of Financial Studies, 6(2), 327–343.
+- https://people.duke.edu/~hpgavin/lm.pdf
 
 
 
