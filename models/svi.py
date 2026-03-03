@@ -98,7 +98,7 @@ class SVI:
         """
         temp = self.iv_df[np.isclose(self.iv_df['T'], expiry)]
         temp = temp.sort_values('log_moneyness')
-        # print(f"Number of points: {len(temp)}")
+        print(f"Number of points: {len(temp)}")
         # print(temp.head(20))
         # print(temp.tail(20))
         k = temp['log_moneyness'].values
@@ -224,6 +224,11 @@ class SVI:
             a, b, rho, m, sigma = a_interp(T), b_interp(T), rho_interp(T), m_interp(T), sigma_interp(T)
             w = svi_total_variance(k_grid, a, b, rho, m, sigma)
             w = np.clip(w, 1e-8, None)
+
+            # Calendar Arbitrage Fix
+            if j > 0:
+                w_prev = IV_grid[j - 1, :] ** 2 * T_grid[j - 1]
+                w = np.maximum(w, w_prev)
             IV_grid[j, :] = np.sqrt(w / T) # total variance -> IV
 
         return k_grid, T_grid, IV_grid

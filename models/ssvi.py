@@ -14,6 +14,4 @@ from scipy.optimize import least_squares
 plt.style.use('dark_background')
 
 class SSVI(SVI):
-    def __init__(self, ticker):
-        self.ticket = ticker
-        pass
+
