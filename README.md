@@ -183,8 +183,7 @@ Initial guess and bounds:
 
 Identical interpolation strategy to SVI: each of the five Heston parameters is PCHIP-interpolated across calibrated maturities. The surface is built by re-pricing via the characteristic function on a dense `(K, T)` grid and inverting each price to IV via Brent.
 
-**Heston Implied Volatility Surface:** https://github.com/incroyale/volatility_surface/blob/main/images/heston_surface.png
-
+![Heston IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/heston_surface.png "Heston Implied Volatility Surface")
 ---
 
 ## Methodology Comparison
