@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import quad
-from models.svi import sviSurface
+from models.svi import SVI
 from datetime import datetime, timezone
 import pandas as pd
 from scipy.optimize import least_squares
@@ -10,7 +10,7 @@ from scipy.interpolate import PchipInterpolator
 import matplotlib.pyplot as plt
 
 
-class HestonSurface(sviSurface):
+class Heston(SVI):
 
     def __init__(self, ticker="^SPX", r=0.035, lambd=0.0):
         super().__init__(ticker=ticker)
@@ -35,14 +35,14 @@ class HestonSurface(sviSurface):
     @staticmethod
     def integrand(phi, S0, K, v0, kappa, theta, sigma, rho, lambd, tau, r):
         args = (S0, v0, kappa, theta, sigma, rho, lambd, tau, r)
-        numerator   = np.exp(r * tau) * HestonSurface.char_func(phi - 1j, *args) - K * HestonSurface.char_func(phi, *args)
+        numerator   = np.exp(r * tau) * Heston.char_func(phi - 1j, *args) - K * Heston.char_func(phi, *args)
         denominator = 1j * phi * K**(1j * phi)
         return numerator / denominator
 
     @staticmethod
     def call_price(S0, K, v0, kappa, theta, sigma, rho, lambd, tau, r):
         args = (S0, K, v0, kappa, theta, sigma, rho, lambd, tau, r)
-        real_integral, err = np.real(quad(HestonSurface.integrand, 0, 100, args=args))
+        real_integral, err = np.real(quad(Heston.integrand, 0, 100, args=args))
         return (S0 - K * np.exp(-r * tau)) / 2 + real_integral / np.pi
 
     @staticmethod
@@ -207,7 +207,7 @@ class HestonSurface(sviSurface):
 
 
 if __name__ == "__main__":
-    heston = HestonSurface(ticker="^SPX")
+    heston = Heston(ticker="^SPX")
     heston.fetch_option_chain()
     heston.spot_price = heston.fetch_spot_price()
     heston.fetch_iv_df(min_days=10/365, max_days=15/365)

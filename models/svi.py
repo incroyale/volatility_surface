@@ -12,7 +12,7 @@ from scipy.optimize import least_squares
 plt.style.use('dark_background')
 
 
-class sviSurface:
+class SVI:
 
     def __init__(self, ticker="^SPX"):
         self.ticker = ticker
@@ -272,7 +272,7 @@ class sviSurface:
 
 
 if __name__ == "__main__":
-    svi = sviSurface(ticker='^SPX')
+    svi = SVI(ticker='^SPX')
     user_input = int(input("Press 0 to use Live Data or 1 for stored data: "))
     if user_input == 0:
         print("Fetching Live Data...")
