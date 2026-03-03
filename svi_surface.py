@@ -81,6 +81,7 @@ class SviSurface:
 
         combined_df = pd.concat([otm_calls[['log_moneyness', 'total_variance', 'T']], otm_puts[['log_moneyness', 'total_variance', 'T']]], ignore_index=True)
         self.iv_df = combined_df
+        self.iv_df.to_csv("sample_data.csv")
         return combined_df
 
 
@@ -219,13 +220,13 @@ class SviSurface:
 if __name__ == "__main__":
     svi = SviSurface(ticker='^SPX')
     svi.fetch_option_chain()
-    svi.fetch_iv_df(min_days=2/365, max_days=2/12, strike_width=0.2)
+    svi.fetch_iv_df(min_days=7/365, max_days=2/12, strike_width=0.1)
 
     fitted_smiles = svi.plot_multiple_smiles(num_maturities=6)
 
     k_grid, T_grid, IV_grid = svi.build_surface_grid(fitted_smiles, num_k=50)
 
-    K, T = np.meshgrid(k_grid, T_grid, indexing='ij')
+    K, T = np.meshgrid(k_grid, T_grid)
     fig = plt.figure(figsize=(12, 7))
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(K, T, IV_grid, cmap='viridis', edgecolor='k', alpha=0.8)
