@@ -1,4 +1,4 @@
-# Implied Volatility Surface â SPX Options
+# Implied Volatility Surface SPX Options
 
 Calibration of implied volatility surfaces from live SPX options data using the **SVI (Stochastic Volatility Inspired)** and **Heston** stochastic volatility models. The project covers the full pipeline: data acquisition, OTM filtering, per-smile calibration, cross-maturity interpolation, and 3D surface visualisation.
 
@@ -35,7 +35,7 @@ For Heston, raw strikes and market IVs are used directly, as the model prices in
 
 ---
 
-## Model 1 â SVI (Stochastic Volatility Inspired)
+## Model 1: SVI (Stochastic Volatility Inspired)
 
 ### Parametrisation
 
@@ -91,13 +91,13 @@ A dense `(k, T)` grid is then evaluated:
 - **Per-smile plots**: market scatter vs SVI fit in `(log-moneyness, total variance)` space, one subplot per expiry
 - **3D surface**: dark-theme Bloomberg-style surface with projected smile contours on the lateral walls, coloured by maturity / moneyness
 
-**SVI Per-Expiry Smile Fits:** https://github.com/incroyale/volatility_surface/blob/main/images/svi_smiles.png
+![SVI Smile Fit Per Expiry](https://github.com/incroyale/volatility_surface/blob/main/images/svi_smiles.png "SVI Per-Expiry Smile Fits")
 
-**SVI Implied Volatility Surface:** https://github.com/incroyale/volatility_surface/blob/main/images/svi_surface_1.png
+![SVI IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/svi_surface_1.png "SVI Implied Volatility Surface")
 
 ---
 
-## Model 2 â Heston Stochastic Volatility
+## Model 2: Heston Stochastic Volatility
 
 ### Model Dynamics
 
@@ -147,7 +147,7 @@ C = (S0 - K*exp(-r*T)) / 2  +  (1/pi) * Re[ integral_0^inf integrand(phi) dphi ]
 
 with the integrand combining evaluations of the characteristic function at `phi` and `phi - i`.
 
-### IV Recovery â Black-Scholes Inversion
+### IV Recovery: Black-Scholes Inversion
 
 Since the Heston model produces call prices rather than IVs directly, each model price is inverted to implied volatility via **Brent\'s method** (`scipy.optimize.brentq`), solving:
 
@@ -204,7 +204,7 @@ Identical interpolation strategy to SVI: each of the five Heston parameters is P
 
 ## Stack
 
-`Python 3` Â· `NumPy` Â· `SciPy` Â· `pandas` Â· `yfinance` Â· `Matplotlib`
+`Python 3` · `NumPy` · `SciPy` · `pandas` · `yfinance` · `Matplotlib`
 
 ---
 
@@ -213,6 +213,6 @@ Identical interpolation strategy to SVI: each of the five Heston parameters is P
 - [ ] SSVI and eSSVI parametrisations with joint surface calibration
 - [ ] Calendar and butterfly arbitrage-free constraints (Gatheral & Jacquier)
 - [ ] Carr-Madan FFT pricing for Heston (stub in `call_price_fft`)
-- [ ] Rough volatility models (rBergomi)
+- [ ] Rough volatility models (Bergomi)
 - [ ] Greeks surface: delta, vega, vanna, volga
 - [ ] Local volatility extraction via Dupire
