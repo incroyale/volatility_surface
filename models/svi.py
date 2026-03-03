@@ -279,7 +279,7 @@ if __name__ == "__main__":
         svi.fetch_option_chain()
         svi.fetch_iv_df(min_days=2/365, max_days=2/12)
     else:
-        svi.iv_df = pd.read_csv("sample_data.csv")
+        svi.iv_df = pd.read_csv("data/sample_data.csv")
         print("Loading stored data from sample_data.csv")
 
     # 1) Fit IV smiles for all expiries
