@@ -1,5 +1,7 @@
 import matplotlib
 from scipy.interpolate import PchipInterpolator
+from matplotlib.colors import Normalize
+matplotlib.use("Qt5Agg")
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -8,10 +10,9 @@ import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
 
 plt.style.use('dark_background')
-matplotlib.use("Qt5Agg")
 
 
-class SviSurface:
+class sviSurface:
 
     def __init__(self, ticker="^SPX"):
         self.ticker = ticker
@@ -48,7 +49,7 @@ class SviSurface:
         return self.calls_df, self.puts_df
 
 
-    def fetch_iv_df(self, min_days=7/365, max_days=1/12, strike_width=0.05):
+    def fetch_iv_df(self, min_days=2/365, max_days=2/12, strike_width=0.1):
         """
         Combines OTM calls and puts into a single DataFrame.
         Filters expiries to [2 days, 1 year] by default.
@@ -59,29 +60,34 @@ class SviSurface:
         self.calls_df['T'] = (self.calls_df['expiry'] - today).dt.days / 365
         self.puts_df['T'] = (self.puts_df['expiry'] - today).dt.days / 365
 
+        # Filter expiry range
         calls_df = self.calls_df[(self.calls_df['T'] >= min_days) & (self.calls_df['T'] <= max_days)]
         puts_df = self.puts_df[(self.puts_df['T'] >= min_days) & (self.puts_df['T'] <= max_days)]
         spot = self.fetch_spot_price()
-        self.spot_price = spot  # store spot price
 
+        # Keep only OTM options
         otm_calls = calls_df[calls_df['strike'] >= spot * 0.99]
         otm_puts = puts_df[puts_df['strike'] <= spot * 1.01]
 
+        # Filter Strike
         otm_calls = otm_calls[(otm_calls['strike'] >= (1 - strike_width) * spot) & (otm_calls['strike'] <= (1 + strike_width) * spot)]
         otm_puts = otm_puts[(otm_puts['strike'] >= (1 - strike_width) * spot) & (otm_puts['strike'] <= (1 + strike_width) * spot)]
 
+        # Log Moneyness = ln(K/F)
         otm_calls['log_moneyness'] = np.log(otm_calls['strike'] / (spot * np.exp(0.0037 * otm_calls['T'])))
         otm_puts['log_moneyness'] = np.log(otm_puts['strike'] / (spot * np.exp(0.0037 * otm_puts['T'])))
 
+        # IV Cleanup
         otm_calls = otm_calls[(otm_calls['impliedVolatility'] > 0.10) & (otm_calls['impliedVolatility'] < 0.5)]
         otm_puts = otm_puts[(otm_puts['impliedVolatility'] > 0.10) & (otm_puts['impliedVolatility'] < 0.5)]
 
+        # Total Variance
         otm_calls['total_variance'] = (otm_calls['impliedVolatility'] ** 2) * (otm_calls['T'])
         otm_puts['total_variance'] = (otm_puts['impliedVolatility'] ** 2) * (otm_puts['T'])
 
         combined_df = pd.concat([otm_calls[['log_moneyness', 'total_variance', 'T']], otm_puts[['log_moneyness', 'total_variance', 'T']]], ignore_index=True)
         self.iv_df = combined_df
-        self.iv_df.to_csv("sample_data.csv")
+        # self.iv_df.to_csv("sample_data.csv")
         return combined_df
 
 
@@ -90,10 +96,11 @@ class SviSurface:
         Fit an SVI model for one smile.
         Equation: w(k) = a + b * (rho * (k - m) + sqrt((k - m)^2 + sigma^2))
         """
-        temp = self.iv_df[abs(self.iv_df['T'] - expiry) < 1e-6]  # avoid floating point equality issues
-        if len(temp) < 5:  # ensure sufficient data points
-            return None  # skip unstable fits
+        temp = self.iv_df[np.isclose(self.iv_df['T'], expiry)]
         temp = temp.sort_values('log_moneyness')
+        # print(f"Number of points: {len(temp)}")
+        # print(temp.head(20))
+        # print(temp.tail(20))
         k = temp['log_moneyness'].values
         w_mkt = temp['total_variance'].values
 
@@ -102,17 +109,18 @@ class SviSurface:
 
         def residuals(params, k, w):
             a, b, rho, m, sigma = params
-            w_model = svi_raw(k, a, b, rho, m, sigma)
+            w_model = svi_raw(k, a, b, rho, m, sigma) # compute model-implied variance for all strikes
             return (w_model - w)
 
-        a0 = np.mean(w_mkt)
+        a0 = np.mean(w_mkt) # initial guess
         b0 = 0.05
         rho0 = -0.5
         m0 = np.median(k)
         sigma0 = 0.2
         x0 = [a0, b0, rho0, m0, sigma0]
-        bounds = ([0.000, 1e-6, -0.999, -1.0, 1e-6],
-                  [1.0, 5.0, 0.999, 1.0, 5.0])  # relaxed bounds for stability
+        # Constraints: b > 0, |rho| < 1, sigma > 0
+        bounds = ([0.000, 1e-6, -0.999, -1.0, 1e-6], # Lower Bounds
+                  [0.5, 1.0, 0.999, 1.0, 2.0]) # Upper Bounds
         res = least_squares(residuals, x0, args=(k, w_mkt), bounds=bounds, method='trf')
         a, b, rho, m, sigma = res.x
         k_grid = np.linspace(k.min(), k.max(), 200)
@@ -126,12 +134,13 @@ class SviSurface:
         """
         expiries = sorted(self.iv_df['T'].unique())
 
-        if len(expiries) > num_maturities:
+        if len(expiries) > num_maturities: # Select evenly spaced maturities if there are too many
             indices = np.linspace(0, len(expiries) - 1, num_maturities, dtype=int)
             expiries = [expiries[i] for i in indices]
 
-        fitted_smiles = {}
+        fitted_smiles = {} # Collect all fitted smiles for surface construction
 
+        # Plotting Code
         n_plots = len(expiries)
         n_cols = 3
         n_rows = (n_plots + n_cols - 1) // n_cols
@@ -196,6 +205,7 @@ class SviSurface:
             k_min = min(k_min, res['k'].min())
             k_max = max(k_max, res['k'].max())
 
+        # Interpolate each parameter through PCHIP
         a_interp = PchipInterpolator(expiries, a_list)
         b_interp = PchipInterpolator(expiries, b_list)
         rho_interp = PchipInterpolator(expiries, rho_list)
@@ -204,35 +214,79 @@ class SviSurface:
 
         k_grid = np.linspace(k_min, k_max, num_k)
         T_grid = np.linspace(min(expiries), max(expiries), num_T)
-        IV_grid = np.zeros((num_T, num_k))  # corrected grid shape
+        IV_grid = np.zeros((num_T, num_k))
 
         def svi_total_variance(k, a, b, rho, m, sigma):
             return a + b * (rho * (k - m) + np.sqrt((k - m)**2 + sigma**2))
 
+        # Compute IV surface for each maturity
         for j, T in enumerate(T_grid):
             a, b, rho, m, sigma = a_interp(T), b_interp(T), rho_interp(T), m_interp(T), sigma_interp(T)
             w = svi_total_variance(k_grid, a, b, rho, m, sigma)
-            IV_grid[j, :] = np.sqrt(np.maximum(w, 1e-10) / T)  # protect against negative variance
+            w = np.clip(w, 1e-8, None)
+            IV_grid[j, :] = np.sqrt(w / T) # total variance -> IV
 
         return k_grid, T_grid, IV_grid
 
 
+    def plot_3d_surface(self, k_grid, T_grid, IV_grid):
+        Kmesh, Tmesh = np.meshgrid(k_grid, T_grid, indexing='xy')
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        fig.patch.set_facecolor("#0e0f12")
+        ax.set_facecolor("#0e0f12")
+        for pane in (ax.xaxis.pane, ax.yaxis.pane, ax.zaxis.pane):
+            pane.set_facecolor((0.06, 0.07, 0.08, 0.0))
+            pane.set_edgecolor((1, 1, 1, 0.25))
+        ax.tick_params(colors="#d8d8d8")
+        cmap = plt.get_cmap("turbo")
+        ax.plot_surface(Kmesh, Tmesh, IV_grid, cmap=cmap, linewidth=0.1, antialiased=True, alpha=0.95, rstride=1, cstride=1)
+        ax.view_init(elev=30, azim=310)
+        for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
+            g = axis._axinfo["grid"]
+            g["color"] = (1, 1, 1, 0.15)
+            g["linewidth"] = 0.4
+
+        k_lines = np.quantile(k_grid, np.linspace(0.05, 0.95, 6))
+        norm_k = Normalize(vmin=k_grid.min(), vmax=k_grid.max())
+        x_wall = k_grid.min() - 0.4 * (k_grid.max() - k_grid.min())
+
+        for k0 in k_lines:
+            idx = np.argmin(np.abs(k_grid - k0))
+            ax.plot(T_grid, IV_grid[:, idx], zs=x_wall, zdir="x", color=cmap(norm_k(k0)), lw=2.0, alpha=0.95)
+
+        T_lines = np.quantile(T_grid, np.linspace(0.05, 0.95, 6))
+        norm_T = Normalize(vmin=T_grid.min(), vmax=T_grid.max())
+        y_back = T_grid.max() + 0.2 * (T_grid.max() - T_grid.min())
+
+        for T0 in T_lines:
+            idx = np.argmin(np.abs(T_grid - T0))
+            ax.plot(k_grid, IV_grid[idx, :], zs=y_back, zdir="y", color=cmap(norm_T(T0)), lw=2.0, alpha=0.95)
+
+        ax.set_xlabel("Log Moneyness", color="#eaeaea")
+        ax.set_ylabel("Maturity (Years)", color="#eaeaea")
+        ax.set_zlabel("Implied Vol", color="#eaeaea")
+        ax.set_title(f"{self.ticker} Implied Vol Surface", fontsize=16, y=1.03, color="white")
+        plt.show()
+
+
+
 if __name__ == "__main__":
-    svi = SviSurface(ticker='^SPX')
-    svi.fetch_option_chain()
-    svi.fetch_iv_df(min_days=7/365, max_days=2/12, strike_width=0.1)
+    svi = sviSurface(ticker='^SPX')
+    user_input = int(input("Press 0 to use Live Data or 1 for stored data: "))
+    if user_input == 0:
+        print("Fetching Live Data...")
+        svi.fetch_option_chain()
+        svi.fetch_iv_df(min_days=2/365, max_days=2/12)
+    else:
+        svi.iv_df = pd.read_csv("sample_data.csv")
+        print("Loading stored data from sample_data.csv")
 
-    fitted_smiles = svi.plot_multiple_smiles(num_maturities=6)
+    # 1) Fit IV smiles for all expiries
+    fitted_smiles = svi.plot_multiple_smiles(num_maturities=8)
 
+    # 2) Build IV surface grid
     k_grid, T_grid, IV_grid = svi.build_surface_grid(fitted_smiles, num_k=50)
 
-    K, T = np.meshgrid(k_grid, T_grid)
-    fig = plt.figure(figsize=(12, 7))
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(K, T, IV_grid, cmap='viridis', edgecolor='k', alpha=0.8)
-    ax.set_xlabel('Log Moneyness')
-    ax.set_ylabel('Maturity (Years)')
-    ax.set_zlabel('Implied Vol')
-    ax.set_title(f'{svi.ticker} Implied Vol Surface')
-    fig.colorbar(surf, shrink=0.5, aspect=10, label='Implied Vol')
-    plt.show()
+    # 3) Plot 3D IV Surface (Bloomberg-style with side walls)
+    svi.plot_3d_surface(k_grid, T_grid, IV_grid)
