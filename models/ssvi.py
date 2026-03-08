@@ -1,4 +1,4 @@
-# Extension of SVI by J. Gatheral, Steps:
+# Extension of SVI - (Surface SVI)
 
 from models.svi import SVI
 import numpy as np
@@ -13,6 +13,12 @@ plt.style.use('dark_background')
 
 class SSVI(SVI):
 
+    # Step 2: Define SSVI equation
+    def total_variance(self, k, theta_t, rho, eta, gamma):
+        phi = eta / (theta_t ** gamma * (1 + theta_t) ** (1 - gamma))
+        w = (theta_t / 2) * (1 + rho * phi * k + np.sqrt((phi * k + rho) ** 2 + (1 - rho ** 2)))
+        return w
+
     def calibrate_ssvi(self):
         # Step 1: Extract Total ATM Variance using Linear Interpolation for log moneyness = 0
         thetas = {}
@@ -20,12 +26,6 @@ class SSVI(SVI):
             group = group.sort_values(by=['log_moneyness'])
             theta = np.interp(0, group['log_moneyness'], group['total_variance'])
             thetas[expiry] = theta
-
-        # Step 2: Define SSVI equation
-        def total_variance(k, theta_t, rho, eta, gamma):
-            phi = eta / (theta_t ** gamma * (1 + theta_t) ** (1 - gamma))
-            w = (theta_t/2) * (1 + rho * phi * k + np.sqrt((phi * k + rho)**2 + (1-rho**2)))
-            return w
 
         # Step 3: Objective Function optimization
         def objective(params, thetas):
@@ -37,7 +37,7 @@ class SSVI(SVI):
                 k = group['log_moneyness'].values
                 w_market = group['total_variance'].values
                 # Equal Weighting Used for now
-                w_model = total_variance(k, theta_t, rho, eta, gamma)
+                w_model = self.total_variance(k, theta_t, rho, eta, gamma)
                 total_error += np.sum((w_model - w_market)**2)
             return total_error
 
@@ -65,7 +65,7 @@ class SSVI(SVI):
                 violations.append(val)
             return min(violations)
 
-        constraints = [{'type': 'ineq', 'fun': calendar_constraint, 'args': (thetas, )}, {'type': 'ineq', 'fun': butterfly_constraint, 'args': (thetas, )}]
+        constraints = [{'type': 'ineq', 'fun': calendar_constraint, 'args': (thetas,)}, {'type': 'ineq', 'fun': butterfly_constraint, 'args': (thetas, )}]
 
         # Step 5: Minimization
         def minimization():
@@ -127,11 +127,31 @@ class SSVI(SVI):
             axes[i].legend()
             axes[i].grid(True, alpha=0.3)
 
-        for j in range(i + 1, len(axes)):
+        for j in range(len(expiries), len(axes)):
             axes[j].axis('off')
         plt.subplots_adjust(hspace=0.5)
         plt.tight_layout()
         plt.show()
+
+    def build_ssvi_surface(self, num_k=50, num_T=50):
+        """Build surface directly from global SSVI params — no per-slice fitting."""
+        k_min = self.iv_df['log_moneyness'].min()
+        k_max = self.iv_df['log_moneyness'].max()
+        T_min = self.iv_df['T'].min()
+        T_max = self.iv_df['T'].max()
+
+        k_grid = np.linspace(k_min, k_max, num_k)
+        T_grid = np.linspace(T_min, T_max, num_T)
+        IV_grid = np.zeros((num_T, num_k))
+
+        for j, T in enumerate(T_grid):
+            theta_t = np.interp(T, sorted(self.thetas.keys()),
+                                [self.thetas[t] for t in sorted(self.thetas.keys())])
+            w = self.total_variance(k_grid, theta_t, self.rho, self.eta, self.gamma)
+            w = np.clip(w, 1e-8, None)
+            IV_grid[j, :] = np.sqrt(w / T)
+
+        return k_grid, T_grid, IV_grid
 
 
 if __name__ == '__main__':
@@ -140,3 +160,5 @@ if __name__ == '__main__':
     print("Loading stored data from sample_data.csv")
     ssvi.calibrate_ssvi()
     ssvi.plot_ssvi_fit()
+    k_grid, T_grid, IV_grid = ssvi.build_ssvi_surface(num_k=50, num_T=50)
+    ssvi.plot_3d_surface(k_grid, T_grid, IV_grid)
