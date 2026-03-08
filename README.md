@@ -90,7 +90,7 @@ and `theta(T)` is the ATM total variance at each maturity, extracted via linear 
 
 ---
 
-## Model 3: Heston Stochastic Volatility
+## Model 3: Heston Stochastic Volatility (In Progress)
 
 ### Model Dynamics
 
