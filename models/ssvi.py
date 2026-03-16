@@ -1,4 +1,5 @@
 # Extension of SVI - (Surface SVI)
+from scipy.interpolate import PchipInterpolator
 
 from models.svi import SVI
 import numpy as np
@@ -19,13 +20,32 @@ class SSVI(SVI):
         w = (theta_t / 2) * (1 + rho * phi * k + np.sqrt((phi * k + rho) ** 2 + (1 - rho ** 2)))
         return w
 
+    def _estimate_atm_variance(self, group, window=0.05):
+        """
+        Fit a quadratic to points near k = 0 and evaluate to get theta_t:
+        w(k) = a0 + a1 * k + a2 * k^2
+        Falls back to linear interpolation if <3 atm points exist.
+        """
+        group = group.sort_values('log_moneyness')
+        k_vals = group['log_moneyness'].values
+        w_vals = group['total_variance'].values
+        mask = np.abs(k_vals) <= window
+        k_near = k_vals[mask]
+        w_near = w_vals[mask]
+        if len(k_near) >= 3: # Local quadratic fit
+            coeffs = np.polyfit(k_near, w_near, 2) # a2, a1, a0
+            theta = np.polyval(coeffs, 0.0)
+        else:
+            theta = np.interp(0, k_vals, w_vals)
+        theta = max(theta, 1e-8)
+        return float(theta)
+
+
     def calibrate_ssvi(self):
         # Step 1: Extract Total ATM Variance using Linear Interpolation for log moneyness = 0
         thetas = {}
         for expiry, group in self.iv_df.groupby('T'):
-            group = group.sort_values(by=['log_moneyness'])
-            theta = np.interp(0, group['log_moneyness'], group['total_variance'])
-            thetas[expiry] = theta
+            thetas[expiry] = self._estimate_atm_variance(group)
 
         # Step 3: Objective Function optimization
         def objective(params, thetas):
@@ -65,9 +85,10 @@ class SSVI(SVI):
                 violations.append(val)
             return min(violations)
 
-        constraints = [{'type': 'ineq', 'fun': calendar_constraint, 'args': (thetas,)}, {'type': 'ineq', 'fun': butterfly_constraint, 'args': (thetas, )}]
+        constraints = [{'type': 'ineq', 'fun': calendar_constraint, 'args': (thetas,)},
+                       {'type': 'ineq', 'fun': butterfly_constraint, 'args': (thetas, )}]
 
-        # Step 5: Minimization
+        # Step 5: 2-Phase Minimization
         def minimization():
             count = [0]
             # Phase 1: Global Search with differential evolution
@@ -97,6 +118,32 @@ class SSVI(SVI):
         print(f"Success: {result.success}")
         print(f"Message: {result.message}")
         print(f"Final error: {result.fun:.6e}")
+        self._verify_arbitrage_free()
+
+        def _verify_arbitrage_free(self):
+            """
+            Checks calendar spread and butterfly arbitrage conditions after fitting.
+            Does not modify params.
+            """
+            rho, eta, gamma = self.rho, self.eta, self.gamma
+            print("\n--- Arbitrage-Free Verification ---")
+            cal_val = 2 - eta * (1 + abs(rho))
+            cal_ok = cal_val >= 0
+            print(f"Calendar Condition: "f"{cal_val:+.6f}  {'✓ OK' if cal_ok else '✗ VIOLATED'}")
+            bf_violations = []
+            for T, theta_t in sorted(self.thetas.items()):
+                phi = eta / (theta_t ** gamma * (1 + theta_t) ** (1 - gamma))
+                val = 1 - (theta_t * phi ** 2 / 4) * (1 + abs(rho)) ** 2
+                if val < 0:
+                    bf_violations.append((T, val))
+
+            if not bf_violations: print(f"Butterfly Condition: ✓ OK {len(self.thetas)} slices checked")
+            else: print(f"Butterfly Condition: ✗ VIOLATED on {len(bf_violations)} on slices:")
+            for T, val in bf_violations:
+                print(f"T = {T:.4f} margin={val:+.6f}")
+
+
+
 
     def plot_ssvi_fit(self, num_maturities=9):
         expiries = sorted(self.iv_df['T'].unique())
@@ -144,9 +191,13 @@ class SSVI(SVI):
         T_grid = np.linspace(T_min, T_max, num_T)
         IV_grid = np.zeros((num_T, num_k))
 
+        sorted_T = sorted(self.thetas.key())
+        sorted_theta = [self.thetas[t] for t in sorted_T]
+        theta_interp = PchipInterpolator(sorted_T, sorted_theta)
+
         for j, T in enumerate(T_grid):
-            theta_t = np.interp(T, sorted(self.thetas.keys()),
-                                [self.thetas[t] for t in sorted(self.thetas.keys())])
+            theta_t = float(theta_interp(T))
+            theta_t = max(theta_t, 1e-8)
             w = self.total_variance(k_grid, theta_t, self.rho, self.eta, self.gamma)
             w = np.clip(w, 1e-8, None)
             IV_grid[j, :] = np.sqrt(w / T)
