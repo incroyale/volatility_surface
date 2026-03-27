@@ -86,41 +86,4 @@ and `theta(T)` is the ATM total variance at each maturity, extracted via linear 
 ### Results
 ![SSVI Smile Fit Per Expiry](https://github.com/incroyale/volatility_surface/blob/main/images/ssvi_smiles.png "SSVI Per-Expiry Smile Fits")
 
-![SSVI IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/ssvi_surface.png "SSVI Implied Volatility Surface")
-
----
-
-## Model 3: Heston Stochastic Volatility (In Progress)
-
-### Model Dynamics
-
-The Heston model specifies asset price and variance jointly:
-
-```
-dS =  mu * S dt + sqrt(v) * S dW1
-dv = kappa * (theta - v) dt + sigma * sqrt(v) dW2
-corr(dW1, dW2) = rho
-```
-
-**Parameter interpretation:**
-
-| Parameter | Role |
-|---|---|
-| `v0` | Initial (spot) variance |
-| `kappa` | Mean-reversion speed of variance |
-| `theta` | Long-run mean variance |
-| `sigma` | Vol-of-vol (volatility of variance) |
-| `rho` | Spot-vol correlation — primary skew driver |
-
-- The Feller condition `2 * kappa * theta > sigma^2` ensures variance stays strictly positive.
-
-
-- Call prices are computed using the **Heston characteristic function**
-
-
-- IV is calculated from Heston price using **brentq**
-
-### Results
-![Heston IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/heston_surface.png "Heston Implied Volatility Surface")
-
----
+![SSVI IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/ssvi_surface.png "SSVI Implied Volatility 
