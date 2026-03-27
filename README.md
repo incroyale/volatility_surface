@@ -86,4 +86,4 @@ and `theta(T)` is the ATM total variance at each maturity, extracted via linear 
 ### Results
 ![SSVI Smile Fit Per Expiry](https://github.com/incroyale/volatility_surface/blob/main/images/ssvi_smiles.png "SSVI Per-Expiry Smile Fits")
 
-![SSVI IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/ssvi_surface.png "SSVI Implied Volatility 
+![SSVI IV Surface](https://github.com/incroyale/volatility_surface/blob/main/images/ssvi_surface.png "SSVI Implied Volatility")
