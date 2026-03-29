@@ -1,6 +1,5 @@
 # Extension of SVI - (Surface SVI)
 from scipy.interpolate import PchipInterpolator
-
 from models.svi import SVI
 import numpy as np
 import pandas as pd
@@ -120,27 +119,27 @@ class SSVI(SVI):
         print(f"Final error: {result.fun:.6e}")
         self._verify_arbitrage_free()
 
-        def _verify_arbitrage_free(self):
-            """
-            Checks calendar spread and butterfly arbitrage conditions after fitting.
-            Does not modify params.
-            """
-            rho, eta, gamma = self.rho, self.eta, self.gamma
-            print("\n--- Arbitrage-Free Verification ---")
-            cal_val = 2 - eta * (1 + abs(rho))
-            cal_ok = cal_val >= 0
-            print(f"Calendar Condition: "f"{cal_val:+.6f}  {'✓ OK' if cal_ok else '✗ VIOLATED'}")
-            bf_violations = []
-            for T, theta_t in sorted(self.thetas.items()):
-                phi = eta / (theta_t ** gamma * (1 + theta_t) ** (1 - gamma))
-                val = 1 - (theta_t * phi ** 2 / 4) * (1 + abs(rho)) ** 2
-                if val < 0:
-                    bf_violations.append((T, val))
+    def _verify_arbitrage_free(self):
+        """
+        Checks calendar spread and butterfly arbitrage conditions after fitting.
+        Does not modify params.
+        """
+        rho, eta, gamma = self.rho, self.eta, self.gamma
+        print("\n--- Arbitrage-Free Verification ---")
+        cal_val = 2 - eta * (1 + abs(rho))
+        cal_ok = cal_val >= 0
+        print(f"Calendar Condition: "f"{cal_val:+.6f}  {'✓ OK' if cal_ok else '✗ VIOLATED'}")
+        bf_violations = []
+        for T, theta_t in sorted(self.thetas.items()):
+            phi = eta / (theta_t ** gamma * (1 + theta_t) ** (1 - gamma))
+            val = 1 - (theta_t * phi ** 2 / 4) * (1 + abs(rho)) ** 2
+            if val < 0:
+                bf_violations.append((T, val))
 
-            if not bf_violations: print(f"Butterfly Condition: ✓ OK {len(self.thetas)} slices checked")
-            else: print(f"Butterfly Condition: ✗ VIOLATED on {len(bf_violations)} on slices:")
-            for T, val in bf_violations:
-                print(f"T = {T:.4f} margin={val:+.6f}")
+        if not bf_violations: print(f"Butterfly Condition: ✓ OK {len(self.thetas)} slices checked")
+        else: print(f"Butterfly Condition: ✗ VIOLATED on {len(bf_violations)} on slices:")
+        for T, val in bf_violations:
+            print(f"T = {T:.4f} margin={val:+.6f}")
 
 
 
@@ -191,7 +190,7 @@ class SSVI(SVI):
         T_grid = np.linspace(T_min, T_max, num_T)
         IV_grid = np.zeros((num_T, num_k))
 
-        sorted_T = sorted(self.thetas.key())
+        sorted_T = sorted(self.thetas.keys())
         sorted_theta = [self.thetas[t] for t in sorted_T]
         theta_interp = PchipInterpolator(sorted_T, sorted_theta)
 
