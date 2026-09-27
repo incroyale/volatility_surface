@@ -6,6 +6,8 @@ import pandas as pd
 import matplotlib
 from scipy.optimize import minimize, differential_evolution
 import matplotlib.pyplot as plt
+from pathlib import Path
+
 matplotlib.use("Qt5Agg")
 plt.style.use('dark_background')
 
@@ -98,7 +100,7 @@ class SSVI(SVI):
                 return error
 
             bounds_de = [(-0.999, 0.999), (1e-6, 10.0), (1e-6, 1.0)] # rho, eta, gamma
-            de_result = differential_evolution(obj_de, bounds=bounds_de, seed=42, maxiter=1000, tol=-1e-8, polish=False)
+            de_result = differential_evolution(obj_de, bounds=bounds_de, seed=42, maxiter=1000, tol=1e-8, polish=False)
 
             # Phase 2: Local refinement from the best global point
             constraints = [{'type': 'ineq', 'fun': calendar_constraint, 'args': (thetas,)}, {'type': 'ineq', 'fun': butterfly_constraint, 'args': (thetas,)}]
@@ -206,7 +208,8 @@ class SSVI(SVI):
 
 if __name__ == '__main__':
     ssvi = SSVI()
-    ssvi.iv_df = pd.read_csv("../data/sample_data.csv")
+    BASE_DIR = Path(__file__).resolve().parent.parent  # vol_surface/ (one level up from models/)
+    ssvi.iv_df = pd.read_csv(BASE_DIR / "data" / "sample_data.csv")
     print("Loading stored data from sample_data.csv")
     ssvi.calibrate_ssvi()
     ssvi.plot_ssvi_fit()
